@@ -1,6 +1,7 @@
 Source: libdatrie
 Priority: optional
-Maintainer: Theppitak Karoonboonyanan <thep@debian.org>
+Maintainer: Pexip AS <packaging@pexip.com>
+XSBC-Pexip-Original-Maintainer: Theppitak Karoonboonyanan <thep@debian.org>
 Build-Depends: debhelper (>= 8.1.3), dh-autoreconf, dpkg-dev (>= 1.16.1~)
 Build-Depends-Indep: doxygen
 Standards-Version: 3.9.2
@@ -8,6 +9,7 @@ Section: libs
 Vcs-Git: git://git.debian.org/git/collab-maint/libdatrie.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/libdatrie.git
 Homepage: http://linux.thai.net/projects/libthai
+XS-Pexip-Upstream: http://archive.ubuntu.com/ubuntu/ precise
 
 Package: libdatrie-dev
 Section: libdevel
