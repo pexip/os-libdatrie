@@ -1,3 +1,261 @@
+2015-10-20  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	* configure.ac:
+	  - Bump library revision to reflect code changes.
+
+	* NEWS, configure.ac:
+	=== Version 0.2.10 ===
+
+2015-10-13  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Optimize AlphaMap mapping.
+
+	alpha_map_char_to_trie() is called everywhere before trie state
+	transition. It's an important bottleneck.
+
+	We won't change the persistent AlphaMap structure, but will add
+	pre-calculated lookup tables for use at run-time.
+
+	* datrie/alpha-map.c (struct _AlphaMap):
+	  - Add members for alpha-to-trie and trie-to-alpha lookup tables.
+	* datrie/alpha-map.c (alpha_map_new, alpha_map_free):
+	  - Initialize & free the tables properly.
+	* datrie/alpha-map.c (alpha_map_add_range -> alpha_map_add_range_only
+	  + alpha_map_recalc_work_area):
+	  - Split alpha_map_add_range() API into two parts: adding the range
+	    as usual and recalculate the lookup tables.
+	* datrie/alpha-map.c (alpha_map_clone, alpha_map_fread_bin):
+	  - Call alpha_map_add_range_only() repeatedly before calling
+	    alpha_map_recalc_work_area() once.
+	* datrie/alpha-map.c (alpha_map_char_to_trie, alpha_map_trie_to_char):
+	  - Look up the pre-calculated tables instead of calculating on
+	    every call.
+
+	This appears to save time by 14.6% for total alpha_char_to_trie()
+	calls and even lower its bottleneck rank by 1 rank on a libthai
+	test case. It reduces 0.2% run time of the total libthai test case.
+
+	Note that the time saved would be even more in case of multiple
+	uncontinuous alphabet ranges, at the expense of more memory used.
+
+2015-08-18  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Fix doxygen version checking.
+
+	* configure.ac:
+	  - Correctly compare doxygen versions. Simple expr comparison
+	    didn't work with version 1.8.10.
+
+	Thanks Petr Gajdos <pgajdos@suse.cz> for the patch.
+
+2015-06-24  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	* datrie/tail.c (tail_set_suffix):
+	  - Catch strdup() failure.
+
+2015-06-24  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	* configure.ac: Post-release version suffix added.
+
+2015-05-03  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	* NEWS, configure.ac:
+	=== Version 0.2.9 ===
+
+2015-05-03  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Use relative paths for symlinks.
+
+	* tools/Makefile.am, man/Makefile.am:
+	  - Use relative paths for symlinks to avoid confusion in
+	    installation with DESTDIR.
+
+2015-05-03  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Also install symlink for old trietool.
+
+	* man/Makefile.am:
+	  - Add hooks to install/uninstall symlink for old man page.
+
+2015-05-02  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	* configure.ac:
+	  - Bump library revision to reflect code changes.
+
+2015-04-29  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Bump doxygen required version.
+
+	* configure.ac:
+	  - Bump doxygen required version to 1.8.8, according to recent
+	    Doxyfile update.
+
+2015-04-21  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Fix infinite loop on empty trie iteration.
+
+	* tests/Makefile.am, +tests/test_null_trie.c:
+	  - Add test case for empty trie iteration.
+
+	* datrie/darray.c (da_first_separate):
+	  - Fix error condition after loop ending.
+
+	Thanks Sergei Lebedev <sergei.a.lebedev@gmail.com> for the report
+	via personal mail.
+
+	Original report: https://github.com/kmike/datrie/issues/17
+
+2015-04-12  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Document about alphabet size.
+
+	* datrie/trie.h:
+	  - Add to doc comment a description on the alphabet size limit
+	    and the mapped raw codes.
+
+	Thanks edgehogapp for the suggestion.
+	https://groups.google.com/forum/#!topic/thai-linux-foss-devel/U-O__IfviQ0
+
+2015-04-11  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Clarify Symbols' struct & methods.
+
+	* datrie/darray.c (struct _Symbols):
+	  - Use TRIE_CHAR_MAX + 1 instead of hard-coded value for symbols[]
+	    array size.
+
+	Thanks edgehogapp for the suggestion.
+	https://groups.google.com/forum/#!topic/thai-linux-foss-devel/U-O__IfviQ0
+
+	* datrie/darray.h, datrie/darray.c (symbols_new, symbols_add):
+	  - Hide symbols_new() and symbols_add() for internal use.
+
+2015-03-06  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Update Doxyfile.
+
+	* doc/Doxyfile.in:
+	  - Updated for doxygen 1.8.8 with 'doxygen -u'.
+
+2015-03-02  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Catch realloc failure.
+
+	* datrie/tail.c (tail_alloc_block):
+	  - Check realloc() result on t->tails reallocation and return
+	    failure code if failed.
+	* datrie/tail.c (tail_add_suffix):
+	  - Check return value from tail_alloc_block() and return failure
+	    code if failed.
+	  - Update documentation.
+
+2015-03-02  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Catch realloc failure.
+
+	* datrie/darray.c (da_extend_pool):
+	  - Check realloc() result on d->cells reallocation and handle
+	    failure properly.
+
+2015-02-27  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Catch malloc failure.
+
+	* datrie/tail.c (tail_fread):
+	  - Check malloc() result on suffix string and exit properly.
+
+2015-02-26  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	More micro-optimization with LIKELY/UNLIKELY.
+
+	* datrie/alpha-map.c (alpha_map_char_to_trie, alpha_map_trie_to_char):
+	  - Use UNLIKELY() when checking for NUL character.
+
+2015-02-10  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Fix 'make distcheck' failure.
+
+	* doc/Makefile.am:
+	  - Remove doxygen db file on clean.
+
+2015-02-10  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	More update of my e-mail address.
+
+	* man/trietool.1:
+	  - Update my e-mail address.
+
+2015-02-10  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Rename trietool-0.2 utility to trietool.
+
+	* configure.ac:
+	  - Check for ln -s
+	* tools/Makefile.am:
+	  - Rename bin target from trietool-0.2 to trietool.
+	  - Add hooks to install/uninstall symlink with old name.
+	* man/Makefile.am, man/trietool-0.2.1 -> man/trietool.1:
+	  - Rename & update manpage accordingly.
+
+2015-02-06  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Micro-optimize with likely/unlikely hints.
+
+	* datrie/trie-private.h:
+	  - Add LIKELY() and UNLIKELY() macros based on compiler extension.
+	* datrie/alpha-map.c
+	  (alpha_map_new, alpha_map_clone, alpha_map_fread_bin,
+	   alpha_map_add_range, alpha_map_char_to_trie_str,
+	   alpha_map_trie_to_char_str):
+	* datrie/darray.c
+	  (symbols_new, da_new, da_fread, da_get_base, da_get_check,
+	   da_set_base, da_set_check, da_insert_branch, da_find_free_base,
+	   da_extend_pool):
+	* datrie/dstring.c (dstring_new, dstring_ensure_space):
+	* datrie/tail.c
+	  (tail_new, tail_fread, tail_get_suffix, tail_set_suffix,
+	   tail_get_data, tail_set_data, tail_walk_str, tail_walk_char):
+	* datrie/trie.c
+	  (trie_new, trie_fread, trie_enumerate, trie_state_new,
+	   trie_state_walk, trie_state_is_walkable, trie_iterator_new):
+	  - Use LIKELY() and UNLIKELY() where it is known to be so, mostly
+	    for one-time initialization and failure handling.
+	* datrie/alpha-map.c, datrie/tail.c, datrie/tail.c:
+	  - These are the files that need to include trie-private.h
+	    because of this.
+
+	Callgrind says it does help speed up a little bit.
+
+2015-02-05  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Disable timestamp in Doxygen-generated doc.
+
+	* doc/Doxyfile.in:
+	  - Set HTML_TIMESTAMP to NO to make the document reproducible.
+	    (reported by Debian Reproducible)
+
+2015-02-01  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	* configure.ac: [Belated] post-release version suffix added.
+
+2015-02-01  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Update my e-mail address everywhere.
+
+	* AUTHORS, configure.ac, datrie/*.[ch], tests/*.[ch],
+	  tools/trietool.c:
+	  - Replace all mentionings of my e-mail address with the gmail one.
+
+2015-02-01  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Fix binary file opening on Windows.
+
+	* datrie/trie.c (trie_new_from_file, trie_save):
+	  - Add "b" to fopen() modes, so the binary file is opened properly
+	    on Windows.
+
+	  Thanks phongphan.p for the report and initial patch.
+
 2014-01-10  Theppitak Karoonboonyanan  <thep@linux.thai.net>
 
 	* configure.ac:
