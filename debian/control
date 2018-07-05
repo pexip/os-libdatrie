@@ -9,7 +9,7 @@ Section: libs
 Vcs-Git: git://anonscm.debian.org/collab-maint/libdatrie.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/libdatrie.git
 Homepage: http://linux.thai.net/projects/libthai
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
 
 Package: libdatrie-dev
 Section: libdevel
