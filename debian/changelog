@@ -1,3 +1,9 @@
+libdatrie (0.2.10-4pexip1) pexip; urgency=medium
+
+  * Migrate to Stretch
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 10 Jul 2018 11:13:22 +0000
+
 libdatrie (0.2.10-4) unstable; urgency=medium
 
   * Correctly install doc according to Policy 12.3
