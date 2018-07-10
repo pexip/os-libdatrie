@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(libdatrie, 0.2.8, thep@linux.thai.net)
+AC_INIT(libdatrie, 0.2.10, theppitak@gmail.com)
 AC_CONFIG_SRCDIR([datrie/trie.h])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -14,17 +14,18 @@ AM_INIT_AUTOMAKE(dist-xz no-dist-gzip)
 # Interfaces added:              CURRENT++  REVISION=0  AGE++
 # Interfaces changed/removed:    CURRENT++  REVISION=0  AGE=0
 LT_CURRENT=4
-LT_REVISION=1
+LT_REVISION=3
 LT_AGE=3
 AC_SUBST(LT_CURRENT)
 AC_SUBST(LT_REVISION)
 AC_SUBST(LT_AGE)
 
-DOXYGEN_REQ_VER=1.8.4
+DOXYGEN_REQ_VER=1.8.8
 
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
+AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
@@ -112,12 +113,9 @@ if test "x$enable_doxygen_doc" = "xyes"; then
   else
     AC_MSG_CHECKING([doxygen >= $DOXYGEN_REQ_VER])
     DOXYGEN_VER=$($DOXYGEN --version)
-    if expr $DOXYGEN_VER \< $DOXYGEN_REQ_VER > /dev/null; then
-      AC_MSG_RESULT([$DOXYGEN_VER, no, documentation disabled])
-      enable_doxygen_doc="no"
-    else
-      AC_MSG_RESULT([$DOXYGEN_VER, yes])
-    fi
+    AX_COMPARE_VERSION([$DOXYGEN_VER],[ge],[DOXYGEN_REQ_VER], 
+                       [AC_MSG_RESULT([$DOXYGEN_VER, yes])], 
+                       [AC_MSG_RESULT([$DOXYGEN_VER, no, documentation disabled]); enable_doxygen_doc="no"])
   fi
 fi
 
