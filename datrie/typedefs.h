@@ -29,7 +29,13 @@
 
 #include <limits.h>
 
-typedef enum { FALSE = 0, TRUE = 1 } Bool;
+typedef enum { DA_FALSE = 0, DA_TRUE = 1 } Bool;
+#ifndef FALSE
+# define FALSE DA_FALSE
+#endif
+#ifndef TRUE
+# define TRUE DA_TRUE
+#endif
 
 # if UCHAR_MAX == 0xff
 #   ifndef UINT8_TYPEDEF
@@ -119,10 +125,6 @@ typedef enum { FALSE = 0, TRUE = 1 } Bool;
 # ifndef INT32_TYPEDEF
 #   error "int32 type is undefined!"
 # endif
-
-typedef uint8  byte;
-typedef uint16 word;
-typedef uint32 dword;
 
 
 #endif /* __TYPEDEFS_H */

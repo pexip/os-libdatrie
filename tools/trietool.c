@@ -21,7 +21,6 @@
 
 #include <assert.h>
 
-#include <config.h>
 #include <datrie/trie.h>
 
 /* iconv encoding name for AlphaChar string */
@@ -125,7 +124,7 @@ conv_to_alpha (ProgEnv *env, const char *in, AlphaChar *out, size_t out_size)
     res = iconv (env->to_alpha_conv, (char **) &in_p, &in_left,
                  &out_p, &out_left);
 
-    if (res < 0)
+    if (res == (size_t) -1)
         return res;
 
     /* convert UCS-4LE to AlphaChar string */
@@ -181,31 +180,42 @@ close_conv (ProgEnv *env)
     iconv_close (env->from_alpha_conv);
 }
 
+static char *
+full_path (const char *path, const char *name, const char *ext)
+{
+    int full_size = strlen (path) + strlen (name) + strlen (ext) + 2;
+    char *full_path_buff = (char *) malloc (full_size);
+    sprintf (full_path_buff, "%s/%s%s", path, name, ext);
+    return full_path_buff;
+}
+
 static int
 prepare_trie (ProgEnv *env)
 {
     char buff[256];
+    char *path_name;
 
-    snprintf (buff, sizeof (buff),
-              "%s/%s.tri", env->path, env->trie_name);
-    env->trie = trie_new_from_file (buff);
+    path_name = full_path (env->path, env->trie_name, ".tri");
+    env->trie = trie_new_from_file (path_name);
+    free (path_name);
 
     if (!env->trie) {
         FILE       *sbm;
         AlphaMap   *alpha_map;
 
-        snprintf (buff, sizeof (buff),
-                  "%s/%s.abm", env->path, env->trie_name);
-        sbm = fopen (buff, "r");
+        path_name = full_path (env->path, env->trie_name, ".abm");
+        sbm = fopen (path_name, "r");
         if (!sbm) {
-            fprintf (stderr, "Cannot open alphabet map file %s\n", buff);
+            fprintf (stderr, "Cannot open alphabet map file %s\n", path_name);
+            free (path_name);
             return -1;
         }
+        free (path_name);
 
         alpha_map = alpha_map_new ();
 
         while (fgets (buff, sizeof (buff), sbm)) {
-            int         b, e;
+            unsigned int    b, e;
 
             /* read the range
              * format: [b,e]
@@ -234,14 +244,13 @@ static int
 close_trie (ProgEnv *env)
 {
     if (trie_is_dirty (env->trie)) {
-        char path[256];
-
-        snprintf (path, sizeof (path),
-                  "%s/%s.tri", env->path, env->trie_name);
+        char *path = full_path (env->path, env->trie_name, ".tri");
         if (trie_save (env->trie, path) != 0) {
             fprintf (stderr, "Cannot save trie to %s\n", path);
+            free (path);
             return -1;
         }
+        free (path);
     }
 
     trie_free (env->trie);
@@ -555,27 +564,43 @@ usage (const char *prog_name, int exit_status)
 {
     printf ("%s - double-array trie manipulator\n", prog_name);
     printf ("Usage: %s [OPTION]... TRIE CMD ARG ...\n", prog_name);
+    printf ("Options:\n");
     printf (
-        "Options:\n"
         "  -p, --path DIR           set trie directory to DIR [default=.]\n"
+    );
+    printf (
         "  -h, --help               display this help and exit\n"
+    );
+    printf (
         "  -V, --version            output version information and exit\n"
-        "\n"
-        "Commands:\n"
+    );
+    printf ("\n");
+    printf ("Commands:\n");
+    printf (
         "  add  WORD DATA ...\n"
         "      Add WORD with DATA to trie\n"
+    );
+    printf (
         "  add-list [OPTION] LISTFILE\n"
         "      Add words and data listed in LISTFILE to trie\n"
         "      Options:\n"
         "          -e, --encoding ENC    specify character encoding of LISTFILE\n"
+    );
+    printf (
         "  delete WORD ...\n"
         "      Delete WORD from trie\n"
+    );
+    printf (
         "  delete-list [OPTION] LISTFILE\n"
         "      Delete words listed in LISTFILE from trie\n"
         "      Options:\n"
         "          -e, --encoding ENC    specify character encoding of LISTFILE\n"
+    );
+    printf (
         "  query WORD\n"
         "      Query WORD data from trie\n"
+    );
+    printf (
         "  list\n"
         "      List all words in trie\n"
     );
