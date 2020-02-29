@@ -4,6 +4,8 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
 SHARED_PKG := libdatrie1
 SHLIB_VER := 0.2.0
 
@@ -11,26 +13,33 @@ SHLIB_VER := 0.2.0
 	dh $@ --with autoreconf
 
 override_dh_auto_build-indep:
-	$(MAKE) -C doc
+ifeq ($(filter nodoc,$(DEB_BUILD_OPTIONS)),)
+	dh_auto_build -- -C doc
+endif
 
 override_dh_auto_build-arch:
-	$(MAKE) -C datrie
-	$(MAKE) -C tools
-	$(MAKE) -C man
+	dh_auto_build -- -C datrie
+	dh_auto_build -- -C tools
+	dh_auto_build -- -C man
 
 # No test for doc
 override_dh_auto_test-indep:
 
 ifeq ($(filter nocheck,$(DEB_BUILD_OPTIONS)),)
 override_dh_auto_test-arch:
-	$(MAKE) -C tests check
+	dh_auto_test -- -C tests
 endif
 
+# No upstream doc install, use dh 11 dh_installdocs directly instead
 override_dh_auto_install-indep:
-	$(MAKE) -C doc install DESTDIR=$(CURDIR)/debian/tmp
 
-override_dh_install-indep:
-	dh_install -i -Xjquery.js
+override_dh_link-indep:
+ifeq ($(filter nodoc,$(DEB_BUILD_OPTIONS)),)
+	dh_link -i
+endif
+
+override_dh_installdocs-indep:
+	dh_installdocs -plibdatrie-doc --doc-main-package=libdatrie1 -Xjquery.js
 
 override_dh_auto_install-arch:
 	$(MAKE) -C datrie install DESTDIR=$(CURDIR)/debian/tmp

@@ -27,10 +27,11 @@
 #include <datrie/trie.h>
 #include "utils.h"
 #include <stdio.h>
+#include <wchar.h>
 #include <stdlib.h>
 
 int
-main ()
+main (void)
 {
     Trie         *test_trie;
     TrieState    *trie_root_state;
@@ -66,7 +67,7 @@ main ()
         key = trie_iterator_get_key (trie_it);
         if (key) {
             printf ("Got key from empty trie, which is weird! (key='%ls')\n",
-                    key);
+                    (wchar_t *)key);
             is_failed = TRUE;
             free (key);
         }

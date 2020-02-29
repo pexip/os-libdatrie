@@ -137,7 +137,7 @@ static int  alpha_map_recalc_work_area (AlphaMap *alpha_map);
  *  The created object must be freed with alpha_map_free().
  */
 AlphaMap *
-alpha_map_new ()
+alpha_map_new (void)
 {
     AlphaMap   *alpha_map;
 
@@ -417,7 +417,7 @@ alpha_map_recalc_work_area (AlphaMap *alpha_map)
         const AlphaChar alpha_begin = range->begin;
         int       n_cells, i;
         AlphaChar a;
-        TrieChar  trie_last = 0;
+        TrieIndex trie_last = 0;
         TrieChar  tc;
 
         /* reconstruct alpha-to-trie map */

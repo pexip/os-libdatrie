@@ -27,6 +27,7 @@
 #include <datrie/trie.h>
 #include "utils.h"
 #include <stdio.h>
+#include <wchar.h>
 
 /*
  * Sample trie in http://linux.thai.net/~thep/datrie/datrie.html
@@ -82,7 +83,7 @@ print_walkables (const AlphaChar *walkables, int n_elm)
 #define ALPHABET_SIZE 256
 
 int
-main ()
+main (void)
 {
     Trie       *test_trie;
     DictRec    *dict_p;
@@ -103,7 +104,7 @@ main ()
     for (dict_p = walk_dict; dict_p->key; dict_p++) {
         if (!trie_store (test_trie, dict_p->key, dict_p->data)) {
             printf ("Failed to add key '%ls', data %d.\n",
-                    dict_p->key, dict_p->data);
+                    (wchar_t *)dict_p->key, dict_p->data);
             goto err_trie_created;
         }
     }
@@ -111,6 +112,8 @@ main ()
     printf (
         "Now the trie structure is supposed to be:\n"
         "\n"
+    );
+    printf (
         "          +---o-> (3) -o-> (4) -l-> [5]\n"
         "          |\n"
         "          |        +---i-> (7) -z-> (8) -e-> [9]\n"
