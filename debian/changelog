@@ -1,3 +1,9 @@
+libdatrie (0.2.12-2pexip1) pexip; urgency=medium
+
+  * Migrate to Buster
+
+ -- Vincent Sanders <vince@pexip.com>  Sat, 29 Feb 2020 09:09:32 +0000
+
 libdatrie (0.2.12-2) unstable; urgency=medium
 
   [ Ondřej Nový ]
