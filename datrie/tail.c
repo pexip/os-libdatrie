@@ -34,6 +34,7 @@
 #include "tail.h"
 #include "trie-private.h"
 #include "fileutils.h"
+#include "trie-string.h"
 
 /*----------------------------------*
  *    INTERNAL TYPES DECLARATIONS   *
@@ -165,7 +166,7 @@ tail_fread (FILE *file)
                 goto exit_in_loop;
             }
         }
-        t->tails[i].suffix[length] = '\0';
+        t->tails[i].suffix[length] = TRIE_CHAR_TERM;
     }
 
     return t;
@@ -236,7 +237,7 @@ tail_fwrite (const Tail *t, FILE *file)
             return -1;
         }
 
-        length = t->tails[i].suffix ? strlen ((const char *)t->tails[i].suffix)
+        length = t->tails[i].suffix ? trie_char_strlen (t->tails[i].suffix)
                                     : 0;
         if (!file_write_int16 (file, length))
             return -1;
@@ -244,6 +245,60 @@ tail_fwrite (const Tail *t, FILE *file)
             !file_write_chars (file, (char *)t->tails[i].suffix, length))
         {
             return -1;
+        }
+    }
+
+    return 0;
+}
+
+
+size_t
+tail_get_serialized_size (const Tail *t)
+{
+    size_t static_count = (
+        sizeof (int32) /* sizeof (TAIL_SIGNATURE) */
+        + sizeof (t->first_free)
+        + sizeof (t->num_tails)
+    );
+    size_t dynamic_count = 0u;
+    if (t->num_tails > 0) {
+        TrieIndex   i = 0;
+        dynamic_count += (
+            sizeof (t->tails[i].next_free) + sizeof (t->tails[i].data)
+            + sizeof (int16) /* length */
+        ) * t->num_tails;
+        for (; i < t->num_tails; i++) {
+            if (t->tails[i].suffix)
+            {
+                dynamic_count += trie_char_strsize (t->tails[i].suffix);
+            }
+        }
+    }
+    return static_count + dynamic_count;
+}
+
+
+int
+tail_serialize (const Tail *t, uint8 **ptr)
+{
+    TrieIndex   i;
+
+    serialize_int32_be_incr (ptr, TAIL_SIGNATURE);
+    serialize_int32_be_incr (ptr, t->first_free);
+    serialize_int32_be_incr (ptr, t->num_tails);
+
+    for (i = 0; i < t->num_tails; i++) {
+        int16   length;
+        serialize_int32_be_incr (ptr, t->tails[i].next_free);
+        serialize_int32_be_incr (ptr, t->tails[i].data);
+
+        length = t->tails[i].suffix ? trie_char_strsize (t->tails[i].suffix)
+                                    : 0;
+        serialize_int16_be_incr (ptr, length);
+        if (length)
+        {
+            memcpy (*ptr, (char *)t->tails[i].suffix, length);
+            *ptr += length;
         }
     }
 
@@ -270,31 +325,6 @@ tail_get_suffix (const Tail *t, TrieIndex index)
     return LIKELY (index < t->num_tails) ? t->tails[index].suffix : NULL;
 }
 
-static size_t
-tc_strlen (const TrieChar *str)
-{
-    size_t len = 0;
-    while (*str++) {
-        ++len;
-    }
-    return len;
-}
-
-static TrieChar *
-tc_strdup (const TrieChar *str)
-{
-    TrieChar *dup
-        = (TrieChar *) malloc (sizeof (TrieChar) * (tc_strlen (str) + 1));
-    TrieChar *p = dup;
-
-    while (*str) {
-        *p++ = *str++;
-    }
-    *p = (TrieChar) 0;
-
-    return dup;
-}
-
 /**
  * @brief Set suffix of existing entry
  *
@@ -314,7 +344,7 @@ tail_set_suffix (Tail *t, TrieIndex index, const TrieChar *suffix)
          */
         TrieChar *tmp = NULL;
         if (suffix) {
-            tmp = tc_strdup (suffix);
+            tmp = trie_char_strdup (suffix);
             if (UNLIKELY (!tmp))
                 return FALSE;
         }
@@ -499,7 +529,7 @@ tail_walk_str  (const Tail      *t,
             break;
         ++i;
         /* stop and stay at null-terminator */
-        if (0 == suffix[j])
+        if (TRIE_CHAR_TERM == suffix[j])
             break;
         ++j;
     }
@@ -537,7 +567,7 @@ tail_walk_char (const Tail      *t,
 
     suffix_char = suffix[*suffix_idx];
     if (suffix_char == c) {
-        if (0 != suffix_char)
+        if (TRIE_CHAR_TERM != suffix_char)
             ++*suffix_idx;
         return TRUE;
     }

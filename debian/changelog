@@ -1,3 +1,34 @@
+libdatrie (0.2.13-1) unstable; urgency=medium
+
+  * d/watch: Update to version 4
+  * Switch to debhelper-compat 13
+  * d/rules: Remove nocheck-guard on dh_auto_test-arch
+  * Declare compliance with Debian Policy 4.5.1 (no changes)
+  * d/gbp.conf: Remove the 'buildpackage' section.
+    This should be for per-user options.
+  * Remove versioned debhelper B-Dep
+  * Add upstream metadata
+  * New upstream version 0.2.13
+  * d/copyright: Update years
+  * d/libdatrie1.symbols: Add new symbols
+
+ -- Theppitak Karoonboonyanan <thep@debian.org>  Fri, 29 Jan 2021 17:41:25 +0700
+
+libdatrie (0.2.12-3) unstable; urgency=medium
+
+  * d/gbp.conf: Use --source-only-changes by default
+  * Bump Standards-Version to 4.4.0 (no changes)
+  * d/rules: Drop '--with autoreconf'
+    Already debhelper default since level 10
+  * d/control: Drop B-Dep on ancient dpkg-dev 1.17.1
+  * d/not-installed: Added to confirm dh_missing on *.la exclusion
+  * d/not-installed: Also exclude the aged README.migration
+  * Drop --add-udeb option from dh_makeshilbs
+    - d/control: B-Dep on debhelper (>= 12.3)
+    - d/rule: Drop '--add-udeb' option from dh_makeshlibs call
+
+ -- Theppitak Karoonboonyanan <thep@debian.org>  Mon, 26 Aug 2019 14:55:54 +0700
+
 libdatrie (0.2.12-2) unstable; urgency=medium
 
   [ Ondřej Nový ]

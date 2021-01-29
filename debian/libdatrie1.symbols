@@ -37,3 +37,6 @@ libdatrie.so.1 libdatrie1 #MINVER#
  trie_iterator_get_data@DATRIE_0.2.6 0.2.6
  DATRIE_0.2.7@DATRIE_0.2.7 0.2.7
  alpha_char_strcmp@DATRIE_0.2.7 0.2.7
+ DATRIE_0.2.13@DATRIE_0.2.13 0.2.13
+ trie_get_serialized_size@DATRIE_0.2.13 0.2.13
+ trie_serialize@DATRIE_0.2.13 0.2.13
