@@ -34,6 +34,7 @@
 #include "alpha-map-private.h"
 #include "trie-private.h"
 #include "fileutils.h"
+#include "trie-string.h"
 
 /**
  * @brief Alphabet string length
@@ -59,7 +60,7 @@ alpha_char_strlen (const AlphaChar *str)
  *                      to compare
  *
  * @return negative if @a str1 < @a str2;
- *         0 if @a str1 == @a str2; 
+ *         0 if @a str1 == @a str2;
  *         positive if @a str1 > @a str2
  *
  * Available since: 0.2.7
@@ -299,6 +300,30 @@ alpha_map_fwrite_bin (const AlphaMap *alpha_map, FILE *file)
     return 0;
 }
 
+size_t
+alpha_map_get_serialized_size (const AlphaMap *alpha_map)
+{
+    int32 ranges_count = alpha_map_get_total_ranges (alpha_map);
+    return (
+        4 /* ALPHAMAP_SIGNATURE */
+        + sizeof (ranges_count)
+        + (sizeof (AlphaChar) * 2) * ranges_count /* range->begin, range->end */
+    );
+}
+
+void
+alpha_map_serialize_bin (const AlphaMap *alpha_map, uint8 **ptr)
+{
+    AlphaRange *range;
+    serialize_int32_be_incr (ptr, ALPHAMAP_SIGNATURE);
+    serialize_int32_be_incr (ptr, alpha_map_get_total_ranges (alpha_map));
+
+    for (range = alpha_map->first_range; range; range = range->next) {
+        serialize_int32_be_incr (ptr, range->begin);
+        serialize_int32_be_incr (ptr, range->end);
+    }
+}
+
 static int
 alpha_map_add_range_only (AlphaMap *alpha_map, AlphaChar begin, AlphaChar end)
 {
@@ -415,44 +440,54 @@ alpha_map_recalc_work_area (AlphaMap *alpha_map)
     range = alpha_map->first_range;
     if (range) {
         const AlphaChar alpha_begin = range->begin;
-        int       n_cells, i;
+        int       n_alpha, n_trie, i;
         AlphaChar a;
-        TrieIndex trie_last = 0;
-        TrieChar  tc;
+        TrieIndex trie_char;
 
-        /* reconstruct alpha-to-trie map */
         alpha_map->alpha_begin = alpha_begin;
-        while (range->next) {
+        n_trie = 0;
+        for ( ;; ) {
+            n_trie += range->end - range->begin + 1;
+            if (!range->next)
+                break;
             range = range->next;
         }
+        if (n_trie < TRIE_CHAR_TERM) {
+            n_trie = TRIE_CHAR_TERM + 1;
+        } else {
+            n_trie++;
+        }
         alpha_map->alpha_end = range->end;
-        alpha_map->alpha_map_sz = n_cells = range->end - alpha_begin + 1;
+
+        alpha_map->alpha_map_sz = n_alpha = range->end - alpha_begin + 1;
         alpha_map->alpha_to_trie_map
-            = (TrieIndex *) malloc (n_cells * sizeof (TrieIndex));
+            = (TrieIndex *) malloc (n_alpha * sizeof (TrieIndex));
         if (UNLIKELY (!alpha_map->alpha_to_trie_map))
             goto error_alpha_map_not_created;
-        for (i = 0; i < n_cells; i++) {
+        for (i = 0; i < n_alpha; i++) {
             alpha_map->alpha_to_trie_map[i] = TRIE_INDEX_MAX;
         }
-        for (range = alpha_map->first_range; range; range = range->next) {
-            for (a = range->begin; a <= range->end; a++) {
-                alpha_map->alpha_to_trie_map[a - alpha_begin] = ++trie_last;
-            }
-        }
 
-        /* reconstruct trie-to-alpha map */
-        alpha_map->trie_map_sz = n_cells = trie_last + 1;
+        alpha_map->trie_map_sz = n_trie;
         alpha_map->trie_to_alpha_map
-            = (AlphaChar *) malloc (n_cells * sizeof (AlphaChar));
+            = (AlphaChar *) malloc (n_trie * sizeof (AlphaChar));
         if (UNLIKELY (!alpha_map->trie_to_alpha_map))
             goto error_alpha_map_created;
-        alpha_map->trie_to_alpha_map[0] = 0;
-        tc = 1;
+
+        trie_char = 0;
         for (range = alpha_map->first_range; range; range = range->next) {
             for (a = range->begin; a <= range->end; a++) {
-                alpha_map->trie_to_alpha_map[tc++] = a;
+                if (TRIE_CHAR_TERM == trie_char)
+                    trie_char++;
+                alpha_map->alpha_to_trie_map[a - alpha_begin] = trie_char;
+                alpha_map->trie_to_alpha_map[trie_char] = a;
+                trie_char++;
             }
         }
+        while (trie_char < n_trie) {
+            alpha_map->trie_to_alpha_map[trie_char++] = ALPHA_CHAR_ERROR;
+        }
+        alpha_map->trie_to_alpha_map[TRIE_CHAR_TERM] = 0;
     }
 
     return 0;
@@ -491,7 +526,7 @@ alpha_map_char_to_trie (const AlphaMap *alpha_map, AlphaChar ac)
     TrieIndex   alpha_begin;
 
     if (UNLIKELY (0 == ac))
-        return 0;
+        return TRIE_CHAR_TERM;
 
     if (UNLIKELY (!alpha_map->alpha_to_trie_map))
         return TRIE_INDEX_MAX;
@@ -529,7 +564,7 @@ alpha_map_char_to_trie_str (const AlphaMap *alpha_map, const AlphaChar *str)
             goto error_str_allocated;
         *p = (TrieChar) tc;
     }
-    *p = 0;
+    *p = TRIE_CHAR_TERM;
 
     return trie_str;
 
@@ -543,7 +578,7 @@ alpha_map_trie_to_char_str (const AlphaMap *alpha_map, const TrieChar *str)
 {
     AlphaChar  *alpha_str, *p;
 
-    alpha_str = (AlphaChar *) malloc ((strlen ((const char *)str) + 1)
+    alpha_str = (AlphaChar *) malloc ((trie_char_strlen (str) + 1)
                                       * sizeof (AlphaChar));
     if (UNLIKELY (!alpha_str))
         return NULL;

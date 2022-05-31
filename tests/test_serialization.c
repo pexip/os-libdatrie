@@ -19,46 +19,25 @@
  */
 
 /*
- * test_file.c - Test for datrie file operations
- * Created: 2013-10-16
- * Author:  Theppitak Karoonboonyanan <theppitak@gmail.com>
+ * test_serialization.c - Test for datrie file and in-memory blob operations
+ * Created: 2019-11-11
+ * Author:  Theppitak Karoonboonyanan <theppitak@gmail.com> and KOLANICH <KOLANICH@users.noreply.github.com>
  */
 
 #include <datrie/trie.h>
 #include "utils.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 
 #define TRIE_FILENAME "test.tri"
-
-static Bool
-trie_enum_mark_rec (const AlphaChar *key, TrieData key_data, void *user_data)
-{
-    Bool *is_failed = (Bool *)user_data;
-    TrieData src_data;
-
-    src_data = dict_src_get_data (key);
-    if (TRIE_DATA_ERROR == src_data) {
-        printf ("Extra entry in file: key '%ls', data %d.\n",
-                (wchar_t *)key, key_data);
-        *is_failed = TRUE;
-    } else if (src_data != key_data) {
-        printf ("Data mismatch for: key '%ls', expected %d, got %d.\n",
-                (wchar_t *)key, src_data, key_data);
-        *is_failed = TRUE;
-    } else {
-        dict_src_set_data (key, TRIE_DATA_READ);
-    }
-
-    return TRUE;
-}
 
 int
 main (void)
 {
     Trie    *test_trie;
     DictRec *dict_p;
-    Bool     is_failed;
 
     msg_step ("Preparing trie");
     test_trie = en_trie_new ();
@@ -83,42 +62,60 @@ main (void)
         printf ("Failed to save trie to file '%s'.\n", TRIE_FILENAME);
         goto err_trie_created;
     }
-    trie_free (test_trie);
 
-    /* reload from file */
-    msg_step ("Reloading trie from the saved file");
-    test_trie = trie_new_from_file (TRIE_FILENAME);
-    if (!test_trie) {
-        printf ("Failed to reload saved trie from '%s'.\n",
-                 TRIE_FILENAME);
+    msg_step ("Getting serialized trie size");
+    size_t size = trie_get_serialized_size (test_trie);
+    printf ("serialized trie size %lu\n", size);
+    msg_step ("Allocating");
+    uint8 *trieSerializedData = malloc (size);
+    if (!trieSerializedData) {
+        printf ("Failed to allocate trieSerializedData.\n");
         goto err_trie_saved;
     }
+    printf ("allocated %p\n", trieSerializedData);
+    msg_step ("Serializing");
+    trie_serialize (test_trie, trieSerializedData);
+    msg_step ("Serialized");
 
-    /* enumerate & check */
-    msg_step ("Checking trie contents");
-    is_failed = FALSE;
-    /* mark entries found in file */
-    if (!trie_enumerate (test_trie, trie_enum_mark_rec, (void *)&is_failed)) {
-        printf ("Failed to enumerate trie file contents.\n");
-        goto err_trie_saved;
+    FILE *f = fopen (TRIE_FILENAME, "rb");
+    if (!f) {
+        printf ("Failed to reopen trie file " TRIE_FILENAME ".\n");
+        goto err_serial_data_allocated;
     }
-    /* check for unmarked entries, (i.e. missed in file) */
-    for (dict_p = dict_src; dict_p->key; dict_p++) {
-        if (dict_p->data != TRIE_DATA_READ) {
-            printf ("Entry missed in file: key '%ls', data %d.\n",
-                    (wchar_t *)dict_p->key, dict_p->data);
-            is_failed = TRUE;
-        }
-    }
-    if (is_failed) {
-        printf ("Errors found in trie saved contents.\n");
-        goto err_trie_saved;
+    fseek (f, 0, SEEK_END);
+    size_t file_size = ftell (f);
+    fseek (f, 0, SEEK_SET);
+
+    if (size != file_size) {
+        printf ("Trie serialized data doesn't match size of the file.\n");
+        goto err_file_reopened;
     }
 
+    unsigned char *trieFileData = malloc (size);
+    if (!trieFileData) {
+        printf ("Failed to allocate trieFileData.\n");
+        goto err_file_reopened;
+    }
+    fread (trieFileData, 1, size, f);
+    if (memcmp (trieSerializedData, trieFileData, size) != 0) {
+        printf ("Trie serialized data doesn't match contents of the file.\n");
+        goto err_file_data_allocated;
+    }
+    printf ("PASS!\n");
+
+    free (trieFileData);
+    fclose (f);
+    free (trieSerializedData);
     remove (TRIE_FILENAME);
     trie_free (test_trie);
     return 0;
 
+err_file_data_allocated:
+    free (trieFileData);
+err_file_reopened:
+    fclose (f);
+err_serial_data_allocated:
+    free (trieSerializedData);
 err_trie_saved:
     remove (TRIE_FILENAME);
 err_trie_created:

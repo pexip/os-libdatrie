@@ -1,3 +1,291 @@
+2021-01-29  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	* NEWS:
+	=== Version 0.2.13 ===
+
+2021-01-24  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Update library versioning
+
+	* configure.ac: Bump library versioning to reflect API addition.
+
+2021-01-24  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Rename trie_byte_strlen() to trie_char_strsize().
+
+	The object of the function is TrieChar string. Let's keep
+	that semantics in the name.
+
+	* datrie/trie-string.h, datrie/trie-string.c
+	  (trie_byte_strlen -> trie_char_strsize):
+	  - Rename the function.
+	* datrie/tail.c (tail_get_serialized_size, tail_serialize):
+	  - Replace trie_byte_strlen() calls with the new name.
+
+2021-01-24  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Revise test_serialization.
+
+	* tests/test_serialization.c (-trie_enum_mark_rec):
+	  - Drop unused callback function.
+	* tests/test_serialization (main):
+	  - Drop unused 'is_failed' variable.
+	  - "%Ilu" -> "%lu" printf format.
+	  - Rearrange error handling in stack unwinding style.
+	  - Add '\n' to printf messages.
+	  - Free 'trieSerializedData'.
+
+	We're not moving to C99 yet, but the declaration amid code is
+	too useful to remove. And it's just in the test code, not in
+	the main source. So we still allow it.
+
+2021-01-24  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Get rid of <unistd.h> include in the new test.
+
+	* tests/test_serialization.c (main):
+	  - Replace unlink() calls with remove() from <stdio.h> and drop
+	    <unistd.h> include.
+
+2021-01-24  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Adjust file-internal function declarations.
+
+	* datrie/fileutils.c
+	  (parse_int16_be, serialize_int32_be, serialize_int16_be):
+	  - Re-declare functions as static.
+	* datrie/fileutils.c (parse_int16_be):
+	  - Make the 'buff' arg const pointer.
+	* datrie/fileutils.c:
+	  - Remove some blank lines in source.
+
+2021-01-24  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Fix documentation.
+
+	* datrie/tail.h (Tail typedef):
+	  - Fix comment (Double-array -> Tail).
+
+2021-01-24  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Cosmetic changes.
+
+	* datrie/fileutils.c:
+	* datrie/trie-string.c:
+	* datrie/alpha-map.c:
+	* datrie/darray.h:
+	* datrie/darray.c:
+	* datrie/tail.h:
+	* datrie/tail.c:
+	* datrie/trie.c:
+	* tools/trie-tool.c:
+	* tests/test_serialization.c:
+	  - Use space before left parenthesis.
+	  - Use old-style C comments.
+	  - Remove trailing spaces.
+	  - Re-wrap lines.
+
+2021-01-23  KOLANICH  <KOLANICH@users.noreply.github.com>
+
+	Added serialization of the trie into a memory buffer.
+
+	* datrie/fileutils.c
+	  (file_write_int32, +serialize_int32,
+	   file_write_int16, +serialize_int16,
+	   file_read_int32, +parse_int32_be,
+	   file_read_int16, +parse_int16_be):
+	  - Split binary read/write operations into separate functions.
+	* datrie/fileutils.h, datrie/fileutils.c
+	  (+serialize_int32_be_incr, +serialize_int16_be_incr):
+	  - Add serialization utility functions with pointer advancement.
+	* datrie/trie-string.h, datrie/trie-string.c
+	  (+trie_byte_strlen):
+	  - Add utility method for calculating TrieChar string size in bytes.
+
+	* datrie/alpha-map-private.h, datrie/alpha-map.c
+	  (+alpha_map_get_serialized_size, +alpha_map_serialize_bin):
+	  - Add AlphaMap serialization methods.
+	* datrie/darray.h, datrie/darray.c
+	  (+da_get_serialized_size, +da_serialize):
+	  - Add DArray serialization methods.
+	* datrie/tail.h, datrie/tail.c
+	  (+tail_get_serialized_size, +tail_serialize):
+	  - Add Tail serialization methods.
+	* datrie/trie.h, datrie/trie.c
+	  (+trie_get_serialized_size, +trie_serialize):
+	  - Add Trie serialization methods.
+	* datrie/libdatrie.map, datrie/libdatrie.def:
+	  - Add export symbols for Trie serialization.
+
+	* tests/Makefile.am, +tests/test_serialization.c:
+	  - Add serialization test.
+
+	Pull Request #12.
+
+2021-01-22  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Get rid of <unistd.h> include.
+
+	* tests/test_file.c (main):
+	  - Replace unlink() calls with remove() from <stdio.h> and drop
+	    <unistd.h> include, fixing build issue on Windows.
+
+	Addressing Windows build issue differently from what proposed by
+	@fanc999 in pull request #15. Thanks @fanc999 for first raising this.
+
+2021-01-15  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Use TRIE_CHAR_TERM in TAIL I/O methods.
+
+	* datrie/tail.c (tail_fwrite):
+	  - Replace strlen() with trie_char_strlen() on suffix,
+	    which is TrieChar string.
+	* datrie/tail.c (tail_fread):
+	  - Append TRIE_CHAR_TERM, rather than literal zero,
+	    as suffix terminator.
+
+2021-01-15  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Use TRIE_CHAR_TERM in TrieIterator methods.
+
+	* datrie/trie.c (trie_iterator_get_key):
+	  - Replace strlen() with trie_char_strlen() on tail_str,
+	    which is TrieChar string.
+	  - Check tail_str termination against TRIE_CHAR_TERM, not zero.
+
+2021-01-14  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Fix wrong TRIE_CHAR_TERM semantics.
+
+	* datrie/trie.h (trie_state_is_terminal):
+	  - Test for terminal state using zero AlphaChar.
+	    TRIE_CHAR_TERM is a TrieChar, although it's also accidentally zero.
+
+2021-01-14  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Reduce loops in alpha_map_recalc_work_area().
+
+	* datrie/alpha-map.c (alpha_map_recalc_work_area):
+	  - Instead of pre-filling trie-to-alpha map with errors
+	    and setting valid cells afterward, just fill error cells
+	    left after valid cells are done. Then, finally set
+	    TRIE_CHAR_TERM cell.
+
+2021-01-10  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Rewrite AlphaMap recalc.
+
+	* datrie/alpha-map.c (alpha_map_recalc_work_area):
+	  Rewrite alpha-to-trie & trie-to-alpha maps recalculation
+	  - For clearer relation between the two maps
+	  - To allow other TRIE_CHAR_TERM values than zero
+
+2021-01-09  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Use TRIE_CHAR_TERM macro instead of zero.
+
+	* datrie/alpha-map.c
+	  (alpha_map_char_to_trie, alpha_map_char_to_trie_str):
+	* datrie/trie.c (trie_branch_in_branch, trie_branch_in_tail):
+	* datrie/tail.c (tail_walk_str, tail_walk_char):
+	  - Use TRIE_CHAR_TERM instead of hard-wired zero when working
+	    with raw trie string termination.
+	* datrie/trie-string.c (trie_string_terminate):
+	  - Append TRIE_CHAR_TERM instead of simply delegating to
+	    dstring_terminate().
+
+2021-01-09  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Share static trie string functions internally.
+
+	* datrie/trie-string.h, datrie/trie-string.c, datrie/tail.c
+	  (tc_strlen -> trie_char_strlen, tc_strdup -> trie_char_strdup):
+	  - Move private functions in tail.c to trie-string.[ch],
+	    with new full names under new "static trie string" section.
+	  - Check/assign string terminator using TRIE_CHAR_TERM
+	    instead of zero.
+	* datrie/tail.c (tail_set_suffix):
+	  - Call the new trie_char_strdup() instead of tc_strdup().
+	* datrie/alpha-map.c (alpha_map_trie_to_char_str):
+	  - Call trie_char_strlen() instead of strlen().
+
+2021-01-06  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Get rid of char semantics from TrieChar
+
+	* datrie/trie.c (trie_branch_in_branch, trie_branch_in_tail):
+	  - Check null TrieChar with int zero instead of char.
+
+2021-01-05  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Use proper #include form in installed header.
+
+	* datrie/alpha-map.h:
+	  - Use angle quotes form instead of double quotes in #include.
+
+2021-01-05  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Fix some documentations.
+
+	* datrie/trie.c (trie_is_dirty):
+	  - Adjust wording to make clear the file is out of sync,
+	    not the other way around.
+	* datrie/trie.c (trie_store, trie_store_if_absent):
+	  - Fix typo in the description of 'key' parameter.
+	* datrie/trie.c (trie_store_if_absent):
+	  - Minor wording adjustment (inserted, not appended).
+
+2020-12-30  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Fix isspace() arg problem on NetBSD.
+
+	* tools/trietool.c (command_add_list, string_trim):
+	  - Cast char to unsigned char before passing to isspace().
+
+	Thanks Sean <scole_mail@gmx.com> for the report via a personal mail.
+
+2019-12-20  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Use GitHub issue tracker as bug report address.
+
+	* configure.ac:
+	  - Replace bug report e-mail address with GitHub issue tracker URL.
+
+2019-08-05  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Stop installing README.migration
+
+	It's supposed to be internal document now.
+
+	* Makefile.am:
+	  - Remove README.migration from doc_DATA.
+
+2019-01-21  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Fix cross-compiling issue caused by AC_FUNC_MALLOC
+
+	* configure.ac:
+	  - Replace AC_FUNC_MALLOC with AC_CHECK_FUNCS([malloc]),
+	    as we don't rely on GNU's malloc(0) behavior.
+
+	Thanks Vanessa McHale for the report. Closes: #11
+
+2018-11-23  Theppitak Karoonboonyanan  <theppitak@gmail.com>
+
+	Fix wrong key listing in byte trie
+
+	* tests/Makefile.am, +tests/test_byte_list.c:
+	  - Add test case
+	* datrie/alpha-map.c (alpha_map_recalc_work_area):
+	  - Index trie_to_alpha_map[] using TrieIndex, not TrieChar type,
+	    to prevent overflow upon incrementing over 0xff.
+	  - Drop tc variable and just reuse trie_last.
+
+	Thanks @legale for the report.
+
+	Closes: #9
+	https://github.com/tlwg/libdatrie/issues/9
+
 2018-06-19  Theppitak Karoonboonyanan  <theppitak@gmail.com>
 
 	* configure.ac:

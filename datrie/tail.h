@@ -35,7 +35,7 @@
  */
 
 /**
- * @brief Double-array structure type
+ * @brief Tail structure type
  */
 typedef struct _Tail  Tail;
 
@@ -44,6 +44,10 @@ Tail *   tail_new (void);
 Tail *   tail_fread (FILE *file);
 
 void     tail_free (Tail *t);
+
+size_t   tail_get_serialized_size (const Tail *t);
+
+int      tail_serialize (const Tail *t, uint8 **ptr);
 
 int      tail_fwrite (const Tail *t, FILE *file);
 
