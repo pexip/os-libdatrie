@@ -4,7 +4,7 @@
 AC_PREREQ(2.59)
 AC_INIT(libdatrie,
         m4_esyscmd([build-aux/git-version-gen]),
-        theppitak@gmail.com)
+        [https://github.com/tlwg/libdatrie/issues])
 AC_CONFIG_SRCDIR([datrie/trie.h])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_AUX_DIR(build-aux)
@@ -16,9 +16,9 @@ AM_INIT_AUTOMAKE(dist-xz no-dist-gzip)
 # Library code modified:                    REVISION++
 # Interfaces added:              CURRENT++  REVISION=0  AGE++
 # Interfaces changed/removed:    CURRENT++  REVISION=0  AGE=0
-LT_CURRENT=4
-LT_REVISION=5
-LT_AGE=3
+LT_CURRENT=5
+LT_REVISION=0
+LT_AGE=4
 AC_SUBST(LT_CURRENT)
 AC_SUBST(LT_REVISION)
 AC_SUBST(LT_AGE)
@@ -132,7 +132,7 @@ AC_SUBST(htmldocdir)
 AM_CONDITIONAL(ENABLE_DOXYGEN_DOC,test "x$enable_doxygen_doc" = "xyes")
 
 # Checks for library functions.
-AC_FUNC_MALLOC
+AC_CHECK_FUNCS([malloc])
 
 AC_CONFIG_FILES([Makefile
                  datrie-0.2.pc

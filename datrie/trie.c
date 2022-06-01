@@ -258,6 +258,54 @@ trie_save (Trie *trie, const char *path)
     return res;
 }
 
+
+/**
+ * @brief Get trie serialized size
+ *
+ * @param trie  : the trie
+ *
+ * @return size of the trie in bytes
+ *
+ * Returns size that would be occupied by a trie if it was
+ * serialized into a binary blob or file.
+ *
+ * Available since: 0.2.13
+ */
+size_t
+trie_get_serialized_size (Trie *trie)
+{
+    return alpha_map_get_serialized_size (trie->alpha_map)
+           + da_get_serialized_size (trie->da)
+           + tail_get_serialized_size (trie->tail);
+}
+
+
+/**
+ * @brief Serializes trie data into a memory buffer (including mapping)
+ *
+ * @param trie  : the trie
+ *
+ * @param ptr  : a pointer to current position inside of a preallocated buffer.
+ *
+ * Write @a trie data to a current position in a buffer pointed by @a ptr.
+ * This can be useful for embedding trie index as part of a file data.
+ *
+ * The size that the trie will occupy can be calculated using
+ * trie_get_serialized_size()
+ *
+ * Available since: 0.2.13
+ */
+void
+trie_serialize (Trie *trie, uint8 *ptr)
+{
+    uint8 *ptr1 = ptr;
+    alpha_map_serialize_bin (trie->alpha_map, &ptr1);
+    da_serialize (trie->da, &ptr1);
+    tail_serialize (trie->tail, &ptr1);
+    trie->is_dirty = FALSE;
+}
+
+
 /**
  * @brief Write trie data to an open file
  *
@@ -298,7 +346,7 @@ trie_fwrite (Trie *trie, FILE *file)
  * @return TRUE if there are pending changes, FALSE otherwise
  *
  * Check if the @a trie is dirty with some pending changes and needs saving
- * to synchronize with the file.
+ * to keep the file synchronized.
  */
 Bool
 trie_is_dirty (const Trie *trie)
@@ -366,7 +414,7 @@ trie_retrieve (const Trie *trie, const AlphaChar *key, TrieData *o_data)
  * @brief Store a value for an entry to trie
  *
  * @param trie  : the trie
- * @param key   : the key for the entry to retrieve
+ * @param key   : the key for the entry to store
  * @param data  : the data associated to the entry
  *
  * @return boolean value indicating the success of the operation
@@ -385,13 +433,13 @@ trie_store (Trie *trie, const AlphaChar *key, TrieData data)
  * @brief Store a value for an entry to trie only if the key is not present
  *
  * @param trie  : the trie
- * @param key   : the key for the entry to retrieve
+ * @param key   : the key for the entry to store
  * @param data  : the data associated to the entry
  *
  * @return boolean value indicating the success of the operation
  *
  * Store a @a data for the given @a key in @a trie. If @a key does not
- * exist in @a trie, it will be appended. If it does, the function will
+ * exist in @a trie, it will be inserted. If it does, the function will
  * return failure and the existing value will not be touched.
  *
  * This can be useful for multi-thread applications, as race condition
@@ -482,7 +530,7 @@ trie_branch_in_branch (Trie           *trie,
     if (TRIE_INDEX_ERROR == new_da)
         return FALSE;
 
-    if ('\0' != *suffix)
+    if (TRIE_CHAR_TERM != *suffix)
         ++suffix;
 
     new_tail = tail_add_suffix (trie->tail, suffix);
@@ -519,7 +567,7 @@ trie_branch_in_tail   (Trie           *trie,
     if (TRIE_INDEX_ERROR == old_da)
         goto fail;
 
-    if ('\0' != *p)
+    if (TRIE_CHAR_TERM != *p)
         ++p;
     tail_set_suffix (trie->tail, old_tail, p);
     trie_da_set_tail_index (trie->da, old_da, old_tail);
@@ -1037,8 +1085,7 @@ trie_iterator_get_key (const TrieIterator *iter)
         tail_str += s->suffix_idx;
 
         alpha_key = (AlphaChar *) malloc (sizeof (AlphaChar)
-                                          * (strlen ((const char *)tail_str)
-                                             + 1));
+                                          * (trie_char_strlen (tail_str) + 1));
         alpha_p = alpha_key;
     } else {
         TrieIndex  tail_idx;
@@ -1054,7 +1101,7 @@ trie_iterator_get_key (const TrieIterator *iter)
         key_p = trie_string_get_val (iter->key);
         alpha_key = (AlphaChar *) malloc (
                         sizeof (AlphaChar)
-                        * (key_len + strlen ((const char *)tail_str) + 1)
+                        * (key_len + trie_char_strlen (tail_str) + 1)
                     );
         alpha_p = alpha_key;
         for (i = key_len; i > 0; i--) {
@@ -1062,7 +1109,7 @@ trie_iterator_get_key (const TrieIterator *iter)
         }
     }
 
-    while (*tail_str) {
+    while (TRIE_CHAR_TERM != *tail_str) {
         *alpha_p++ = alpha_map_trie_to_char (s->trie->alpha_map, *tail_str++);
     }
     *alpha_p = 0;

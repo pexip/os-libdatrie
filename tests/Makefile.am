@@ -7,10 +7,12 @@ TESTS = \
 	test_iterator \
 	test_store-retrieve \
 	test_file \
+	test_serialization \
 	test_nonalpha \
 	test_null_trie \
 	test_term_state \
 	test_byte_alpha \
+	test_byte_list \
 	$(NULL)
 
 check_PROGRAMS = \
@@ -18,10 +20,12 @@ check_PROGRAMS = \
 	test_iterator \
 	test_store-retrieve \
 	test_file \
+	test_serialization \
 	test_nonalpha \
 	test_null_trie \
 	test_term_state \
 	test_byte_alpha \
+	test_byte_list \
 	$(NULL)
 
 noinst_HEADERS = \
@@ -52,6 +56,12 @@ test_file_SOURCES = \
 	$(NULL)
 test_file_LDADD = $(top_builddir)/datrie/libdatrie.la
 
+test_serialization_SOURCES = \
+	test_serialization.c \
+	utils.c \
+	$(NULL)
+test_serialization_LDADD = $(top_builddir)/datrie/libdatrie.la
+
 test_nonalpha_SOURCES = \
 	test_nonalpha.c \
 	utils.c \
@@ -75,4 +85,10 @@ test_byte_alpha_SOURCES = \
 	utils.c \
 	$(NULL)
 test_byte_alpha_LDADD = $(top_builddir)/datrie/libdatrie.la
+
+test_byte_list_SOURCES = \
+	test_byte_list.c \
+	utils.c \
+	$(NULL)
+test_byte_list_LDADD = $(top_builddir)/datrie/libdatrie.la
 
