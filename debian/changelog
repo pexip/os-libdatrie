@@ -1,3 +1,17 @@
+libdatrie (0.2.13-2) unstable; urgency=medium
+
+  * d/tests/build: Make build test cross-testable.
+    Change adapted from Sebastien Bacher's patch for libthai in bug #983522.
+    Thanks Julian Andres Klode for first rasing this with initial patch.
+    (Closes: #982540)
+  * Trim trailing whitespace [lintian-brush].
+  * Declare compliance with Debian Policy 4.6.0 (no changes)
+  * Remove 1 obsolete maintscript entry [lintian-brush].
+    - libdatrie-dev.maintscript: No longer need to make doc symlink
+      in libdatrie-dev as once required in stretch (oldoldstable).
+
+ -- Theppitak Karoonboonyanan <thep@debian.org>  Sun, 17 Oct 2021 12:48:12 +0700
+
 libdatrie (0.2.13-1pexip3) pexip-bullseye; urgency=medium
 
   * Bullseye rebuild for ARM64 inclusion
@@ -549,4 +563,3 @@ libdatrie (0.1.1-1) unstable; urgency=low
   * Initial release (Closes: #392315)
 
  -- Theppitak Karoonboonyanan <thep@linux.thai.net>  Thu, 12 Oct 2006 15:27:50 +0700
-
