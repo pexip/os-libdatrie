@@ -1,3 +1,9 @@
+libdatrie (0.2.13-2pexip1) pexip-bookworm; urgency=medium
+
+  * Initial bookworm build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 16 Nov 2023 10:05:55 +0000
+
 libdatrie (0.2.13-2) unstable; urgency=medium
 
   * d/tests/build: Make build test cross-testable.
